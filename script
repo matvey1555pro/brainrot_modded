@@ -1,23 +1,11 @@
---[[
-  Roblox Mobile UI by mellontyX1
-  Вкладки: Visual / Game / Setting
-  ESP: включение, Box, Name, Skeleton
-  Game: Set Home, TP Home, noclip, inf jump, fly
-  Setting: сохранить/загрузить конфиг, подпись by mellontyX1
-  Иконка меню перетаскивается, меню не пропадает после смерти
---]]
-
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local uis = game:GetService("UserInputService")
 local rs = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
-
 local camera = workspace.CurrentCamera
 
--- ====== Состояния ======
 local state = {
     ESP_Enabled = false,
     ESP_Box = false,
@@ -31,17 +19,16 @@ local state = {
     HomePos = nil,
 }
 
--- ====== UI Setup ======
 local function tweenColor(button, enabled)
     TweenService:Create(button, TweenInfo.new(0.25), {
         BackgroundColor3 = enabled and Color3.fromRGB(50, 200, 100) or Color3.fromRGB(200, 50, 50)
     }):Play()
 end
 
-local function createToggle(parent, label, key)
+local function createToggle(parent, label, key, y)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -20, 0, 32)
-    btn.Position = UDim2.new(0, 10, 0, 0)
+    btn.Position = UDim2.new(0, 10, 0, y)
     btn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
     btn.Font = Enum.Font.GothamMedium
     btn.TextColor3 = Color3.new(1,1,1)
@@ -56,6 +43,7 @@ local function createToggle(parent, label, key)
         tweenColor(btn, state[key])
     end)
 
+    btn.Parent = parent
     return btn
 end
 
@@ -109,9 +97,9 @@ local function createGui()
     -- Главное меню
     local Frame = Instance.new("Frame", ScreenGui)
     Frame.Name = "MainFrame"
-    Frame.Size = UDim2.new(0, 360, 0, 360)
-    Frame.Position = UDim2.new(0.5, -180, 0.5, -180)
-    Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    Frame.Size = UDim2.new(0, 380, 0, 400)
+    Frame.Position = UDim2.new(0.5, -190, 0.5, -200)
+    Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     Frame.Visible = false
     Frame.Active = true
     Frame.Draggable = true
@@ -121,29 +109,33 @@ local function createGui()
     Frame.ZIndex = 4
 
     local UICorner = Instance.new("UICorner", Frame)
-    UICorner.CornerRadius = UDim.new(0, 16)
+    UICorner.CornerRadius = UDim.new(0, 20)
 
     -- Заголовок
     local Title = Instance.new("TextLabel", Frame)
-    Title.Size = UDim2.new(1, 0, 0, 40)
-    Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Title.Size = UDim2.new(1, 0, 0, 45)
+    Title.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     Title.Text = "💠 by mellontyX1"
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 20
-    Title.Font = Enum.Font.GothamSemibold
+    Title.TextSize = 22
+    Title.Font = Enum.Font.GothamBold
     Title.BorderSizePixel = 0
+    Title.AnchorPoint = Vector2.new(0, 0)
+    Title.Position = UDim2.new(0, 0, 0, 0)
     local titleCorner = Instance.new("UICorner", Title)
-    titleCorner.CornerRadius = UDim.new(0, 8)
+    titleCorner.CornerRadius = UDim.new(0, 20)
 
     -- Вкладки
     local TabsFrame = Instance.new("Frame", Frame)
-    TabsFrame.Size = UDim2.new(1, 0, 0, 35)
-    TabsFrame.Position = UDim2.new(0, 0, 0, 40)
-    TabsFrame.BackgroundTransparency = 1
+    TabsFrame.Size = UDim2.new(1, 0, 0, 40)
+    TabsFrame.Position = UDim2.new(0, 0, 0, 45)
+    TabsFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    local tabsCorner = Instance.new("UICorner", TabsFrame)
+    tabsCorner.CornerRadius = UDim.new(0, 15)
 
     local TabContent = Instance.new("Frame", Frame)
-    TabContent.Position = UDim2.new(0, 0, 0, 75)
-    TabContent.Size = UDim2.new(1, 0, 1, -75)
+    TabContent.Position = UDim2.new(0, 0, 0, 90)
+    TabContent.Size = UDim2.new(1, 0, 1, -90)
     TabContent.BackgroundTransparency = 1
 
     local tabs = {"Visual", "Game", "Setting"}
@@ -152,14 +144,14 @@ local function createGui()
     for i, tabName in ipairs(tabs) do
         local Button = Instance.new("TextButton", TabsFrame)
         Button.Size = UDim2.new(0, 110, 0, 30)
-        Button.Position = UDim2.new(0, (i - 1) * 115, 0, 0)
+        Button.Position = UDim2.new(0, (i - 1) * 120 + 10, 0, 5)
         Button.Text = tabName
         Button.Font = Enum.Font.GothamBold
         Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
         Button.AutoButtonColor = false
         local bc = Instance.new("UICorner", Button)
-        bc.CornerRadius = UDim.new(0, 8)
+        bc.CornerRadius = UDim.new(0, 12)
 
         local Tab = Instance.new("Frame", TabContent)
         Tab.Size = UDim2.new(1, 0, 1, 0)
@@ -173,96 +165,58 @@ local function createGui()
         end)
     end
 
-    -- === Visual Tab ===
+    -- === Visual Tab Content ===
     local visualTab = tabFrames["Visual"]
+    createToggle(visualTab, "ESP", "ESP_Enabled", 10).Parent = visualTab
+    createToggle(visualTab, "ESP Box", "ESP_Box", 60).Parent = visualTab
+    createToggle(visualTab, "ESP Name", "ESP_Name", 110).Parent = visualTab
+    createToggle(visualTab, "ESP Skeleton", "ESP_Skeleton", 160).Parent = visualTab
 
-    local espEnabledBtn = createToggle(visualTab, "ESP", "ESP_Enabled")
-    espEnabledBtn.Position = UDim2.new(0, 10, 0, 10)
-
-    local espBoxBtn = createToggle(visualTab, "ESP Box", "ESP_Box")
-    espBoxBtn.Position = UDim2.new(0, 10, 0, 52)
-
-    local espNameBtn = createToggle(visualTab, "ESP Name", "ESP_Name")
-    espNameBtn.Position = UDim2.new(0, 10, 0, 94)
-
-    local espSkeletonBtn = createToggle(visualTab, "ESP Skeleton", "ESP_Skeleton")
-    espSkeletonBtn.Position = UDim2.new(0, 10, 0, 136)
-
-    -- === Game Tab ===
+    -- === Game Tab Content ===
     local gameTab = tabFrames["Game"]
 
-    local setHomeBtn = Instance.new("TextButton", gameTab)
-    setHomeBtn.Size = UDim2.new(1, -20, 0, 40)
-    setHomeBtn.Position = UDim2.new(0, 10, 0, 10)
-    setHomeBtn.Text = "Set Home"
-    setHomeBtn.Font = Enum.Font.GothamBold
-    setHomeBtn.TextColor3 = Color3.new(1,1,1)
-    setHomeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    local setHomeCorner = Instance.new("UICorner", setHomeBtn)
-    setHomeCorner.CornerRadius = UDim.new(0, 8)
+    local function createButton(parent, text, y)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -20, 0, 40)
+        btn.Position = UDim2.new(0, 10, 0, y)
+        btn.Text = text
+        btn.Font = Enum.Font.GothamBold
+        btn.TextColor3 = Color3.new(1,1,1)
+        btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+        local corner = Instance.new("UICorner", btn)
+        corner.CornerRadius = UDim.new(0, 12)
+        btn.Parent = parent
+        return btn
+    end
 
-    local tpHomeBtn = Instance.new("TextButton", gameTab)
-    tpHomeBtn.Size = UDim2.new(1, -20, 0, 40)
-    tpHomeBtn.Position = UDim2.new(0, 10, 0, 62)
-    tpHomeBtn.Text = "TP Home"
-    tpHomeBtn.Font = Enum.Font.GothamBold
-    tpHomeBtn.TextColor3 = Color3.new(1,1,1)
-    tpHomeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    local tpHomeCorner = Instance.new("UICorner", tpHomeBtn)
-    tpHomeCorner.CornerRadius = UDim.new(0, 8)
+    local setHomeBtn = createButton(gameTab, "Set Home", 10)
+    local tpHomeBtn = createButton(gameTab, "TP Home", 60)
 
-    local noclipBtn = createToggle(gameTab, "Noclip", "Noclip")
-    noclipBtn.Position = UDim2.new(0, 10, 0, 114)
+    local noclipBtn = createToggle(gameTab, "Noclip", "Noclip", 110)
+    local infJumpBtn = createToggle(gameTab, "Inf Jump", "InfJump", 160)
+    local flyBtn = createToggle(gameTab, "Fly", "Fly", 210)
 
-    local infJumpBtn = createToggle(gameTab, "Inf Jump", "InfJump")
-    infJumpBtn.Position = UDim2.new(0, 10, 0, 156)
-
-    local flyBtn = createToggle(gameTab, "Fly", "Fly")
-    flyBtn.Position = UDim2.new(0, 10, 0, 198)
-
-    -- === Setting Tab ===
+    -- === Setting Tab Content ===
     local settingTab = tabFrames["Setting"]
-
     local infoLabel = Instance.new("TextLabel", settingTab)
-    infoLabel.Size = UDim2.new(1, -20, 0, 30)
-    infoLabel.Position = UDim2.new(0, 10, 0, 10)
+    infoLabel.Size = UDim2.new(1, 0, 0, 40)
+    infoLabel.Position = UDim2.new(0, 0, 0, 10)
+    infoLabel.BackgroundTransparency = 1
     infoLabel.Text = "by mellontyX1"
     infoLabel.Font = Enum.Font.GothamBold
     infoLabel.TextColor3 = Color3.new(1,1,1)
-    infoLabel.BackgroundTransparency = 1
-    infoLabel.TextSize = 18
+    infoLabel.TextSize = 24
 
-    local saveBtn = Instance.new("TextButton", settingTab)
-    saveBtn.Size = UDim2.new(1, -20, 0, 40)
-    saveBtn.Position = UDim2.new(0, 10, 0, 50)
-    saveBtn.Text = "Save Config"
-    saveBtn.Font = Enum.Font.GothamBold
-    saveBtn.TextColor3 = Color3.new(1,1,1)
-    saveBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    local saveCorner = Instance.new("UICorner", saveBtn)
-    saveCorner.CornerRadius = UDim.new(0, 8)
+    -- Кнопки сохранения/загрузки (заглушки)
+    local saveBtn = createButton(settingTab, "Save Config", 70)
+    local loadBtn = createButton(settingTab, "Load Config", 130)
 
-    local loadBtn = Instance.new("TextButton", settingTab)
-    loadBtn.Size = UDim2.new(1, -20, 0, 40)
-    loadBtn.Position = UDim2.new(0, 10, 0, 102)
-    loadBtn.Text = "Load Config"
-    loadBtn.Font = Enum.Font.GothamBold
-    loadBtn.TextColor3 = Color3.new(1,1,1)
-    loadBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    local loadCorner = Instance.new("UICorner", loadBtn)
-    loadCorner.CornerRadius = UDim.new(0, 8)
-
-    -- Обработчики кнопок Save/Load
     saveBtn.MouseButton1Click:Connect(function()
         local json = HttpService:JSONEncode(state)
-        -- В Roblox Studio кэшировать нельзя, здесь можно сделать сохранение в DataStore или в таблицу
         print("Config saved: "..json)
-        -- Для простоты — просто выводим в консоль
     end)
     loadBtn.MouseButton1Click:Connect(function()
-        -- Загружаем из json (для теста просто из print)
-        -- В реальном скрипте надо из DataStore или из файла
-        print("Load config not implemented, надо подключать DataStore")
+        print("Load config is not implemented.")
     end)
 
     -- Открыть/закрыть меню
@@ -270,7 +224,7 @@ local function createGui()
         Frame.Visible = not Frame.Visible
     end)
 
-    -- ====== Функции и переменные для ESP ======
+    -- ====== ESP Implementation ======
 
     local drawings = {}
 
@@ -308,10 +262,10 @@ local function createGui()
 
     local function removeESP(plr)
         if drawings[plr] then
-            drawings[plr].Box:Remove()
-            drawings[plr].Name:Remove()
+            drawings[plr].Box.Visible = false
+            drawings[plr].Name.Visible = false
             for _, l in pairs(drawings[plr].Lines) do
-                l:Remove()
+                l.Visible = false
             end
             drawings[plr] = nil
         end
@@ -347,7 +301,6 @@ local function createGui()
                     nameTag.Text = plr2.Name
                     nameTag.Visible = state.ESP_Name
 
-                    -- Skeleton: рисуем линию HRP -> Head
                     local lines = drawings[plr2].Lines
                     if state.ESP_Skeleton then
                         local head = plr2.Character:FindFirstChild("Head")
@@ -363,7 +316,6 @@ local function createGui()
                         else
                             lines[1].Visible = false
                         end
-                        -- остальные линии скрываем
                         for i=2,5 do
                             lines[i].Visible = false
                         end
@@ -381,7 +333,30 @@ local function createGui()
         end
     end)
 
-    -- ===== Game Features =====
+    -- ===== Game Logic =====
+
+    local function noclipLoop()
+        while state.Noclip do
+            task.wait()
+            local char = player.Character
+            if char then
+                for _, part in pairs(char:GetChildren()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end
+    end
+
+    local function onJumpRequest()
+        if state.InfJump then
+            local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+    end
 
     -- Set Home
     setHomeBtn.MouseButton1Click:Connect(function()
@@ -397,7 +372,7 @@ local function createGui()
         end
     end)
 
-    -- TP Home (миг на миллисекунду)
+    -- TP Home
     tpHomeBtn.MouseButton1Click:Connect(function()
         local char = player.Character
         if char and char:FindFirstChild("HumanoidRootPart") and state.HomePos then
@@ -409,20 +384,6 @@ local function createGui()
         end
     end)
 
-    -- Noclip
-    local function noclipLoop()
-        while state.Noclip do
-            task.wait()
-            local char = player.Character
-            if char then
-                for _, part in pairs(char:GetChildren()) do
-                    if part:IsA("BasePart") and part.CanCollide then
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end
-    end
     noclipBtn.MouseButton1Click:Connect(function()
         state.Noclip = not state.Noclip
         tweenColor(noclipBtn, state.Noclip)
@@ -431,22 +392,12 @@ local function createGui()
         end
     end)
 
-    -- Infinite Jump
-    local function onJumpRequest()
-        if state.InfJump then
-            local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-            if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
-                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
-        end
-    end
     infJumpBtn.MouseButton1Click:Connect(function()
         state.InfJump = not state.InfJump
         tweenColor(infJumpBtn, state.InfJump)
     end)
     game:GetService("UserInputService").JumpRequest:Connect(onJumpRequest)
 
-    -- Fly (простая реализация)
     local flySpeed = 50
     local flying = false
     local bodyVelocity
@@ -479,9 +430,7 @@ local function createGui()
         end
     end)
 
-    -- Управление полётом WASD и стрелками
-    local moveVector = Vector3.new(0,0,0)
-    local function updateFly()
+    rs.RenderStepped:Connect(function()
         if flying and bodyVelocity then
             local camCF = workspace.CurrentCamera.CFrame
             local moveDir = Vector3.new(0,0,0)
@@ -492,26 +441,20 @@ local function createGui()
             if uis:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0,1,0) end
             if uis:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0,1,0) end
 
-            moveDir = moveDir.Unit * flySpeed
-            if moveDir.Magnitude == 0 then
-                bodyVelocity.Velocity = Vector3.new(0,0,0)
-            else
+            if moveDir.Magnitude > 0 then
+                moveDir = moveDir.Unit * flySpeed
                 bodyVelocity.Velocity = moveDir
+            else
+                bodyVelocity.Velocity = Vector3.new(0,0,0)
             end
         end
-    end
-
-    rs.RenderStepped:Connect(updateFly)
-
-    -- Открыть меню изначально скрыто
-    Frame.Visible = false
+    end)
 
     return ScreenGui
 end
 
 local gui = createGui()
 
--- Не удаляем меню при смерти
 player.CharacterAdded:Connect(function()
     task.wait(1)
     if gui and gui.Parent == player.PlayerGui then return end
