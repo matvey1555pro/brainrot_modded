@@ -1,196 +1,140 @@
--- ✅ Полный локальный скрипт для Roblox Mobile UI с Visual/Game/Setting вкладками
--- Автор: mellontyX1 (с подписями, сохранением и анимацией)
+-- ✅ Полный скрипт для Roblox Mobile UI с ESP (Box, Name, Skeleton)
+-- Автор: mellontyX1
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local mouse = player:GetMouse()
+local camera = workspace.CurrentCamera
 local uis = game:GetService("UserInputService")
 local rs = game:GetService("RunService")
-local http = game:GetService("HttpService")
 
-local ScreenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-ScreenGui.Name = "mellontyX1_GUI"
-
--- 🌟 Иконка меню
-local Icon = Instance.new("ImageButton", ScreenGui)
-Icon.Size = UDim2.new(0, 60, 0, 60)
-Icon.Position = UDim2.new(0, 20, 0.5, -30)
-Icon.Image = "rbxassetid://15276188648" -- Красивая иконка
-Icon.BackgroundTransparency = 1
-Icon.Name = "OpenMenu"
-
--- 📦 Главное меню
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 340, 0, 340)
-Frame.Position = UDim2.new(0.5, -170, 0.5, -170)
-Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Frame.Visible = false
-Frame.Active = true
-Frame.Draggable = true
-Frame.Name = "MainFrame"
-
--- Заголовок
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-Title.Text = "💠 by mellontyX1"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 18
-Title.Font = Enum.Font.GothamBold
-
--- Вкладки
-local TabsFrame = Instance.new("Frame", Frame)
-TabsFrame.Size = UDim2.new(1, 0, 0, 35)
-TabsFrame.Position = UDim2.new(0, 0, 0, 30)
-TabsFrame.BackgroundTransparency = 1
-
-local TabContent = Instance.new("Frame", Frame)
-TabContent.Position = UDim2.new(0, 0, 0, 65)
-TabContent.Size = UDim2.new(1, 0, 1, -65)
-TabContent.BackgroundTransparency = 1
-
-local tabs = {"Visual", "Game", "Setting"}
-local tabFrames = {}
-
-for i, tabName in ipairs(tabs) do
-	local Button = Instance.new("TextButton", TabsFrame)
-	Button.Size = UDim2.new(0, 110, 0, 30)
-	Button.Position = UDim2.new(0, (i - 1) * 115, 0, 0)
-	Button.Text = tabName
-	Button.Font = Enum.Font.GothamBold
-	Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-
-	local Tab = Instance.new("Frame", TabContent)
-	Tab.Size = UDim2.new(1, 0, 1, 0)
-	Tab.BackgroundTransparency = 1
-	Tab.Visible = i == 1
-	tabFrames[tabName] = Tab
-
-	Button.MouseButton1Click:Connect(function()
-		for _, f in pairs(tabFrames) do f.Visible = false end
-		Tab.Visible = true
-	end)
-end
-
--- 🌐 ESP Toggle
 local espToggles = {
 	Enabled = false,
 	Box = false,
+	Name = false,
 	Skeleton = false,
-	Name = false
 }
 
-local function createToggle(tab, label, key, y)
-	local toggle = Instance.new("TextButton", tab)
-	toggle.Size = UDim2.new(1, -20, 0, 30)
-	toggle.Position = UDim2.new(0, 10, 0, y)
-	toggle.Text = label .. ": OFF"
-	toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-	toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-	toggle.Font = Enum.Font.Gotham
+local drawings = {}
 
-	toggle.MouseButton1Click:Connect(function()
-		espToggles[key] = not espToggles[key]
-		toggle.Text = label .. ": " .. (espToggles[key] and "ON" or "OFF")
-	end)
-end
+-- 🧠 Функция для создания ESP объекта
+local function createESP(player)
+	if drawings[player] then return end
+	drawings[player] = {
+		Box = Drawing.new("Square"),
+		Name = Drawing.new("Text"),
+		Lines = {},
+	}
 
-createToggle(tabFrames.Visual, "ESP Enabled", "Enabled", 0)
-createToggle(tabFrames.Visual, "ESP Box", "Box", 35)
-createToggle(tabFrames.Visual, "ESP Skeleton", "Skeleton", 70)
-createToggle(tabFrames.Visual, "ESP Name", "Name", 105)
+	drawings[player].Box.Thickness = 1
+	drawings[player].Box.Color = Color3.fromRGB(255, 50, 50)
+	drawings[player].Box.Transparency = 1
+	drawings[player].Box.Filled = false
+	drawings[player].Box.Visible = false
 
--- 📍 Game Tab функции
-local homePos
+	drawings[player].Name.Size = 13
+	drawings[player].Name.Center = true
+	drawings[player].Name.Outline = true
+	drawings[player].Name.Color = Color3.fromRGB(255, 255, 255)
+	drawings[player].Name.Transparency = 1
+	drawings[player].Name.Visible = false
 
-local function button(tab, text, y, func)
-	local b = Instance.new("TextButton", tab)
-	b.Size = UDim2.new(1, -20, 0, 30)
-	b.Position = UDim2.new(0, 10, 0, y)
-	b.Text = text
-	b.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-	b.TextColor3 = Color3.fromRGB(255, 255, 255)
-	b.Font = Enum.Font.Gotham
-	b.MouseButton1Click:Connect(func)
-end
-
-button(tabFrames.Game, "Set Home", 0, function()
-	homePos = player.Character and player.Character:FindFirstChild("HumanoidRootPart").Position
-end)
-
-button(tabFrames.Game, "TP Home (Flash)", 35, function()
-	if homePos then
-		local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-		local old = hrp.Position
-		hrP.CFrame = CFrame.new(homePos)
-		wait(0.05)
-		hrP.CFrame = CFrame.new(old)
+	for i = 1, 5 do
+		table.insert(drawings[player].Lines, Drawing.new("Line"))
+		drawings[player].Lines[i].Color = Color3.fromRGB(0, 255, 255)
+		drawings[player].Lines[i].Thickness = 1
+		drawings[player].Lines[i].Transparency = 1
+		drawings[player].Lines[i].Visible = false
 	end
-end)
+end
 
--- Noclip, Inf Jump, Fly
-local noclip = false
-local infjump = false
-local fly = false
-local flyconn
-
-button(tabFrames.Game, "Noclip", 70, function()
-	noclip = not noclip
-	rs.Stepped:Connect(function()
-		if noclip and player.Character then
-			for _, p in pairs(player.Character:GetDescendants()) do
-				if p:IsA("BasePart") then p.CanCollide = false end
+-- 🧹 Удалить ESP
+local function removeESP(player)
+	if drawings[player] then
+		for _, obj in pairs(drawings[player]) do
+			if typeof(obj) == "table" then
+				for _, line in pairs(obj) do line:Remove() end
+			else
+				obj:Remove()
 			end
 		end
-	end)
-end)
+		drawings[player] = nil
+	end
+end
 
-button(tabFrames.Game, "Inf Jump", 105, function()
-	infjump = not infjump
-	uis.JumpRequest:Connect(function()
-		if infjump then
-			player.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+-- 🔁 Отрисовка ESP каждый кадр
+rs.RenderStepped:Connect(function()
+	if not espToggles.Enabled then
+		for _, d in pairs(drawings) do
+			d.Box.Visible = false
+			d.Name.Visible = false
+			for _, l in pairs(d.Lines) do l.Visible = false end
 		end
-	end)
-end)
+		return
+	end
 
-button(tabFrames.Game, "Fly", 140, function()
-	fly = not fly
-	local hrp = player.Character:WaitForChild("HumanoidRootPart")
-	if fly then
-		local bg = Instance.new("BodyGyro", hrp)
-		local bv = Instance.new("BodyVelocity", hrp)
-		bg.P = 9e4
-		bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
-		bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
-		flyconn = rs.RenderStepped:Connect(function()
-			bv.velocity = workspace.CurrentCamera.CFrame.LookVector * 50
-			bg.CFrame = workspace.CurrentCamera.CFrame
-		end)
-	else
-		if flyconn then flyconn:Disconnect() end
-		for _, v in pairs(hrp:GetChildren()) do if v:IsA("BodyGyro") or v:IsA("BodyVelocity") then v:Destroy() end end
+	for _, plr in pairs(Players:GetPlayers()) do
+		if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
+			createESP(plr)
+			local hrp = plr.Character.HumanoidRootPart
+			local pos, onscreen = camera:WorldToViewportPoint(hrp.Position)
+			if onscreen then
+				local size = Vector2.new(30, 60) -- Условный размер коробки
+				local box = drawings[plr].Box
+				box.Position = Vector2.new(pos.X - size.X / 2, pos.Y - size.Y / 2)
+				box.Size = size
+				box.Visible = espToggles.Box
+
+				local name = drawings[plr].Name
+				name.Position = Vector2.new(pos.X, pos.Y - 40)
+				name.Text = plr.Name
+				name.Visible = espToggles.Name
+
+				-- Упрощённый Skeleton: HRP -> Head + 2 ног
+				if espToggles.Skeleton then
+					local head = plr.Character:FindFirstChild("Head")
+					local l = drawings[plr].Lines
+					if head then
+						local hPos, hOn = camera:WorldToViewportPoint(head.Position)
+						l[1].From = Vector2.new(pos.X, pos.Y)
+						l[1].To = Vector2.new(hPos.X, hPos.Y)
+						l[1].Visible = true
+					end
+					l[2].Visible = false
+					l[3].Visible = false
+				else
+					for _, line in pairs(drawings[plr].Lines) do line.Visible = false end
+				end
+			else
+				removeESP(plr)
+			end
+		end
 	end
 end)
 
--- ⚙️ Settings (save/load)
-button(tabFrames.Setting, "💾 Save Config", 0, function()
-	if writefile then
-		writefile("mellontyX1_config.json", http:JSONEncode(espToggles))
+-- 🌐 Интерфейс переключения
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+local btn = Instance.new("TextButton", gui)
+btn.Size = UDim2.new(0, 150, 0, 40)
+btn.Position = UDim2.new(0, 20, 0, 100)
+btn.Text = "ESP: OFF"
+btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+btn.Font = Enum.Font.GothamBold
+btn.TextSize = 16
+
+btn.MouseButton1Click:Connect(function()
+	espToggles.Enabled = not espToggles.Enabled
+	btn.Text = "ESP: " .. (espToggles.Enabled and "ON" or "OFF")
+end)
+
+-- 🔘 Доп. переключатели (можно вынести в меню)
+uis.InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+	if input.KeyCode == Enum.KeyCode.B then
+		espToggles.Box = not espToggles.Box
+	elseif input.KeyCode == Enum.KeyCode.N then
+		espToggles.Name = not espToggles.Name
+	elseif input.KeyCode == Enum.KeyCode.M then
+		espToggles.Skeleton = not espToggles.Skeleton
 	end
 end)
-
-button(tabFrames.Setting, "📂 Load Config", 35, function()
-	if isfile and readfile and isfile("mellontyX1_config.json") then
-		local data = http:JSONDecode(readfile("mellontyX1_config.json"))
-		for k, v in pairs(data) do espToggles[k] = v end
-	end
-end)
-
--- 🔘 Показать меню
-Icon.MouseButton1Click:Connect(function()
-	Frame.Visible = not Frame.Visible
-end)
-
--- 🔧 Конец скрипта
