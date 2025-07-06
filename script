@@ -1,565 +1,119 @@
---[[
-	Roblox Lua GUI-меню
-	Автор: Gemini AI
-	Дата: 07.07.2025
-
-	Этот LocalScript создаёт GUI с вкладками и различными функциями для игрока.
-]]
-
---// СЕРВИСЫ
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+-- ⚙️ Переменные
 local Players = game:GetService("Players")
-
---// ЛОКАЛЬНЫЙ ИГРОК
+local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-local rootPart = character:WaitForChild("HumanoidRootPart")
+local char = player.Character or player.CharacterAdded:Wait()
+local hum = char:WaitForChild("Humanoid")
+local runService = game:GetService("RunService")
 
---// ПЕРЕМЕННЫЕ GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MainMenuGui"
-screenGui.Parent = player:WaitForChild("PlayerGui")
-screenGui.ResetOnSpawn = false -- Не сбрасывать GUI при респавне
-
---// ГЛАВНОЕ ОКНО
-local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
-mainFrame.Parent = screenGui
-mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-mainFrame.BackgroundTransparency = 0.1
-mainFrame.BorderSizePixel = 0
-mainFrame.Size = UDim2.new(0, 500, 0, 300)
-mainFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
-mainFrame.Visible = false -- Изначально скрыто
-mainFrame.Active = true
-mainFrame.Draggable = true -- Позволяет перетаскивать окно
-
---// ЭЛЕМЕНТЫ ДИЗАЙНА
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 8)
-uiCorner.Parent = mainFrame
-
-local uiStroke = Instance.new("UIStroke")
-uiStroke.Color = Color3.fromRGB(120, 120, 255)
-uiStroke.Thickness = 1.5
-uiStroke.Parent = mainFrame
-
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Name = "TitleLabel"
-titleLabel.Parent = mainFrame
-titleLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-titleLabel.Size = UDim2.new(1, 0, 0, 30)
-titleLabel.Font = Enum.Font.SourceSansBold
-titleLabel.Text = "Gemini Menu"
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextSize = 18
-
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 8)
-titleCorner.Parent = titleLabel
-
---// ВКЛАДКИ (КОНТЕЙНЕР)
-local tabsContainer = Instance.new("Frame")
-tabsContainer.Name = "TabsContainer"
-tabsContainer.Parent = mainFrame
-tabsContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-tabsContainer.BorderSizePixel = 0
-tabsContainer.Position = UDim2.new(0, 0, 0, 30)
-tabsContainer.Size = UDim2.new(0, 120, 1, -30)
-
---// СТРАНИЦЫ (КОНТЕЙНЕР)
-local pagesContainer = Instance.new("Frame")
-pagesContainer.Name = "PagesContainer"
-pagesContainer.Parent = mainFrame
-pagesContainer.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-pagesContainer.BorderSizePixel = 0
-pagesContainer.Position = UDim2.new(0, 120, 0, 30)
-pagesContainer.Size = UDim2.new(1, -120, 1, -30)
-
---// КОНФИГУРАЦИЯ
-local menuVisible = false
 local homePosition = nil
-local toggles = {
-	speed = false,
-	noClip = false,
-	infJump = false,
-	esp = false,
-}
+local noclipEnabled = false
+local infJump = false
+local espEnabled = false
 
--- Таблица для хранения ESP элементов
-local espElements = {}
+-- 🧱 Интерфейс
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "HackMenu"
+gui.ResetOnSpawn = false
 
---// ФУНКЦИИ АНИМАЦИИ
-local function tween(object, properties, duration)
-	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tween = TweenService:Create(object, tweenInfo, properties)
-	tween:Play()
-	return tween
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0.3, 0, 0.5, 0)
+frame.Position = UDim2.new(0.35, 0, 0.25, 0)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BorderSizePixel = 0
+frame.BackgroundTransparency = 0.1
+
+local layout = Instance.new("UIListLayout", frame)
+layout.Padding = UDim.new(0, 5)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.VerticalAlignment = Enum.VerticalAlignment.Top
+
+-- 📲 Кнопка создания
+function createButton(text, callback)
+	local btn = Instance.new("TextButton", frame)
+	btn.Size = UDim2.new(1, -20, 0, 40)
+	btn.Text = text
+	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.Font = Enum.Font.SourceSansBold
+	btn.TextSize = 20
+	btn.BorderSizePixel = 0
+	btn.MouseButton1Click:Connect(callback)
 end
 
---// ФУНКЦИЯ ПЕРЕКЛЮЧЕНИЯ ВИДИМОСТИ МЕНЮ
-local function toggleMenu()
-	menuVisible = not menuVisible
-	if menuVisible then
-		mainFrame.Visible = true
-		tween(mainFrame, {Size = UDim2.new(0, 500, 0, 300), Position = UDim2.new(0.5, -250, 0.5, -150), BackgroundTransparency = 0.1}, 0.3)
-	else
-		local t = tween(mainFrame, {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1}, 0.3)
-		t.Completed:Wait()
-		mainFrame.Visible = false
+-- 🏠 Set Home
+createButton("Set Home", function()
+	if char and char:FindFirstChild("HumanoidRootPart") then
+		homePosition = char.HumanoidRootPart.Position
 	end
-end
+end)
 
---// ФУНКЦИЯ СОЗДАНИЯ КНОПКИ
-local function createButton(parent, text, callback)
-	local button = Instance.new("TextButton")
-	button.Name = text .. "Button"
-	button.Parent = parent
-	button.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-	button.BorderSizePixel = 0
-	button.Size = UDim2.new(1, -20, 0, 30)
-	button.Position = UDim2.new(0.5, 0, 0, 0)
-	button.AnchorPoint = Vector2.new(0.5, 0)
-	button.Font = Enum.Font.SourceSans
-	button.Text = text
-	button.TextColor3 = Color3.fromRGB(255, 255, 255)
-	button.TextSize = 16
-
-	local btnCorner = Instance.new("UICorner")
-	btnCorner.CornerRadius = UDim.new(0, 6)
-	btnCorner.Parent = button
-
-	local btnStroke = Instance.new("UIStroke")
-	btnStroke.Color = Color3.fromRGB(80, 80, 90)
-	btnStroke.Thickness = 1
-	btnStroke.Parent = button
-
-	button.MouseButton1Click:Connect(callback)
-
-	-- Анимация при наведении
-	button.MouseEnter:Connect(function()
-		tween(button, {BackgroundColor3 = Color3.fromRGB(65, 65, 75)}, 0.2)
-	end)
-	button.MouseLeave:Connect(function()
-		tween(button, {BackgroundColor3 = Color3.fromRGB(50, 50, 60)}, 0.2)
-	end)
-
-	return button
-end
-
---// ФУНКЦИЯ СОЗДАНИЯ TOGGLE-КНОПКИ
-local function createToggleButton(parent, text, toggleName, callback)
-	local button = createButton(parent, text, nil)
-	local originalColor = button.BackgroundColor3
-	local toggledColor = Color3.fromRGB(80, 80, 150)
-	local isToggled = toggles[toggleName]
-
-	local function updateColor()
-		if toggles[toggleName] then
-			button.BackgroundColor3 = toggledColor
-			button.Text = text .. " [ON]"
-		else
-			button.BackgroundColor3 = originalColor
-			button.Text = text .. " [OFF]"
-		end
-	end
-
-	updateColor()
-
-	button.MouseButton1Click:Connect(function()
-		toggles[toggleName] = not toggles[toggleName]
-		updateColor()
-		if callback then
-			callback(toggles[toggleName])
-		end
-	end)
-
-	return button
-end
-
---// --- РЕАЛИЗАЦИЯ ФУНКЦИЙ ---
-
--- 1. Set Home
-local function setHome()
-	homePosition = rootPart.CFrame
-	print("Точка дома установлена на:", homePosition.Position)
-	-- Можно добавить визуальное уведомление
-end
-
--- 2. Teleport to Home
-local function teleportHome()
-	if homePosition then
-		rootPart.CFrame = homePosition
-	else
-		print("Точка дома не установлена!")
-	end
-end
-
--- 3. Blink Teleport
-local function blinkTeleport()
-	if homePosition then
-		local originalCFrame = rootPart.CFrame
-		rootPart.CFrame = homePosition
-		wait(0.05) -- Задержка в 50 миллисекунд
-		rootPart.CFrame = originalCFrame
-	else
-		print("Точка дома не установлена!")
-	end
-end
-
--- 4. Speed Hack
-local function setSpeed(enabled)
-	if enabled then
-		humanoid.WalkSpeed = 50
-	else
-		humanoid.WalkSpeed = 16 -- Стандартная скорость
-	end
-end
-
--- 5. NoClip
-local function setNoClip(enabled)
-	toggles.noClip = enabled
-end
-
--- 6. Infinite Jump
-local function setInfiniteJump(enabled)
-	if enabled then
-		UserInputService.JumpRequest:Connect(function()
-			if toggles.infJump then -- Проверяем, активен ли чит
-				humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-			end
+-- ⚡ Blink to Home 0.0001s
+createButton("Blink to Home", function()
+	if homePosition and char and char:FindFirstChild("HumanoidRootPart") then
+		local original = char.HumanoidRootPart.Position
+		char.HumanoidRootPart.CFrame = CFrame.new(homePosition)
+		task.delay(0.0001, function()
+			char.HumanoidRootPart.CFrame = CFrame.new(original)
 		end)
 	end
-	-- Отключение происходит через проверку `toggles.infJump`
-end
+end)
 
--- 7. ESP
-local function updateEsp()
-	-- Очистка старых ESP
-	for p, gui in pairs(espElements) do
-		if not p.Parent then -- Если игрок вышел
-			gui:Destroy()
-			espElements[p] = nil
-		end
-	end
+-- 🚀 SpeedHack
+createButton("SpeedHack (50)", function()
+	hum.WalkSpeed = 50
+end)
 
-	-- Создание/Обновление ESP для всех игроков
+-- 🚫 NoClip
+createButton("Toggle NoClip", function()
+	noclipEnabled = not noclipEnabled
+end)
+
+-- 🌙 Infinite Jump
+createButton("Toggle Infinite Jump", function()
+	infJump = not infJump
+end)
+
+-- 👁️ Simple ESP (Name Tags)
+createButton("Toggle ESP", function()
+	espEnabled = not espEnabled
 	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= player and p.Character and p.Character:FindFirstChild("Head") then
-			local head = p.Character.Head
-			local espGui = espElements[p]
-
-			if not espGui then -- Создаём новый BillboardGui
-				espGui = Instance.new("BillboardGui")
-				espGui.Name = "PlayerESP"
-				espGui.Parent = head
-				espGui.Adornee = head
-				espGui.AlwaysOnTop = true
-				espGui.Size = UDim2.new(0, 200, 0, 50)
-				espGui.StudsOffset = Vector3.new(0, 2, 0)
-
-				local textLabel = Instance.new("TextLabel")
-				textLabel.Parent = espGui
-				textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-				textLabel.BackgroundTransparency = 0.5
-				textLabel.Size = UDim2.new(1, 0, 1, 0)
-				textLabel.Font = Enum.Font.SourceSansBold
-				textLabel.TextColor3 = Color3.fromRGB(0, 255, 127) -- Ярко-зелёный
-				textLabel.TextSize = 14
-
-				local boxStroke = Instance.new("UIStroke")
-				boxStroke.Color = Color3.fromRGB(0, 255, 127)
-				boxStroke.Thickness = 1
-				boxStroke.Parent = textLabel
-
-				espElements[p] = espGui
-			end
-
-			-- Обновляем текст и видимость
-			espGui.Enabled = toggles.esp
-			if toggles.esp then
-				local playerHeadPos = player.Character and player.Character:FindFirstChild("Head")
-				if playerHeadPos then
-					local distance = math.floor((head.Position - playerHeadPos.Position).Magnitude)
-					espGui.TextLabel.Text = p.Name .. " [" .. distance .. "m]"
-				else
-					espGui.TextLabel.Text = p.Name
+		if p ~= player then
+			local char = p.Character
+			if char and char:FindFirstChild("Head") then
+				local tag = char.Head:FindFirstChild("ESPTag")
+				if espEnabled and not tag then
+					local bbg = Instance.new("BillboardGui", char.Head)
+					bbg.Name = "ESPTag"
+					bbg.Size = UDim2.new(0, 100, 0, 40)
+					bbg.AlwaysOnTop = true
+					local label = Instance.new("TextLabel", bbg)
+					label.Size = UDim2.new(1, 0, 1, 0)
+					label.BackgroundTransparency = 1
+					label.TextColor3 = Color3.new(1, 0, 0)
+					label.Text = p.Name
+					label.TextScaled = true
+				elseif not espEnabled and tag then
+					tag:Destroy()
 				end
 			end
-		else
-			-- Если у игрока нет персонажа, но ESP элемент для него есть, удаляем
-			if espElements[p] then
-				espElements[p]:Destroy()
---[[
-	Roblox Lua GUI-меню
-	Автор: Gemini AI
-	Дата: 07.07.2025
-
-	Этот LocalScript создаёт GUI с вкладками и различными функциями для игрока.
-]]
-
---// СЕРВИСЫ
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-
---// ЛОКАЛЬНЫЙ ИГРОК
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-local rootPart = character:WaitForChild("HumanoidRootPart")
-
---// ПЕРЕМЕННЫЕ GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MainMenuGui"
-screenGui.Parent = player:WaitForChild("PlayerGui")
-screenGui.ResetOnSpawn = false -- Не сбрасывать GUI при респавне
-
---// ГЛАВНОЕ ОКНО
-local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
-mainFrame.Parent = screenGui
-mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-mainFrame.BackgroundTransparency = 0.1
-mainFrame.BorderSizePixel = 0
-mainFrame.Size = UDim2.new(0, 500, 0, 300)
-mainFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
-mainFrame.Visible = false -- Изначально скрыто
-mainFrame.Active = true
-mainFrame.Draggable = true -- Позволяет перетаскивать окно
-
---// ЭЛЕМЕНТЫ ДИЗАЙНА
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 8)
-uiCorner.Parent = mainFrame
-
-local uiStroke = Instance.new("UIStroke")
-uiStroke.Color = Color3.fromRGB(120, 120, 255)
-uiStroke.Thickness = 1.5
-uiStroke.Parent = mainFrame
-
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Name = "TitleLabel"
-titleLabel.Parent = mainFrame
-titleLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-titleLabel.Size = UDim2.new(1, 0, 0, 30)
-titleLabel.Font = Enum.Font.SourceSansBold
-titleLabel.Text = "Gemini Menu"
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextSize = 18
-
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 8)
-titleCorner.Parent = titleLabel
-
---// ВКЛАДКИ (КОНТЕЙНЕР)
-local tabsContainer = Instance.new("Frame")
-tabsContainer.Name = "TabsContainer"
-tabsContainer.Parent = mainFrame
-tabsContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-tabsContainer.BorderSizePixel = 0
-tabsContainer.Position = UDim2.new(0, 0, 0, 30)
-tabsContainer.Size = UDim2.new(0, 120, 1, -30)
-
---// СТРАНИЦЫ (КОНТЕЙНЕР)
-local pagesContainer = Instance.new("Frame")
-pagesContainer.Name = "PagesContainer"
-pagesContainer.Parent = mainFrame
-pagesContainer.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-pagesContainer.BorderSizePixel = 0
-pagesContainer.Position = UDim2.new(0, 120, 0, 30)
-pagesContainer.Size = UDim2.new(1, -120, 1, -30)
-
---// КОНФИГУРАЦИЯ
-local menuVisible = false
-local homePosition = nil
-local toggles = {
-	speed = false,
-	noClip = false,
-	infJump = false,
-	esp = false,
-}
-
--- Таблица для хранения ESP элементов
-local espElements = {}
-
---// ФУНКЦИИ АНИМАЦИИ
-local function tween(object, properties, duration)
-	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tween = TweenService:Create(object, tweenInfo, properties)
-	tween:Play()
-	return tween
-end
-
---// ФУНКЦИЯ ПЕРЕКЛЮЧЕНИЯ ВИДИМОСТИ МЕНЮ
-local function toggleMenu()
-	menuVisible = not menuVisible
-	if menuVisible then
-		mainFrame.Visible = true
-		tween(mainFrame, {Size = UDim2.new(0, 500, 0, 300), Position = UDim2.new(0.5, -250, 0.5, -150), BackgroundTransparency = 0.1}, 0.3)
-	else
-		local t = tween(mainFrame, {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1}, 0.3)
-		t.Completed:Wait()
-		mainFrame.Visible = false
-	end
-end
-
---// ФУНКЦИЯ СОЗДАНИЯ КНОПКИ
-local function createButton(parent, text, callback)
-	local button = Instance.new("TextButton")
-	button.Name = text .. "Button"
-	button.Parent = parent
-	button.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-	button.BorderSizePixel = 0
-	button.Size = UDim2.new(1, -20, 0, 30)
-	button.Position = UDim2.new(0.5, 0, 0, 0)
-	button.AnchorPoint = Vector2.new(0.5, 0)
-	button.Font = Enum.Font.SourceSans
-	button.Text = text
-	button.TextColor3 = Color3.fromRGB(255, 255, 255)
-	button.TextSize = 16
-
-	local btnCorner = Instance.new("UICorner")
-	btnCorner.CornerRadius = UDim.new(0, 6)
-	btnCorner.Parent = button
-
-	local btnStroke = Instance.new("UIStroke")
-	btnStroke.Color = Color3.fromRGB(80, 80, 90)
-	btnStroke.Thickness = 1
-	btnStroke.Parent = button
-
-	button.MouseButton1Click:Connect(callback)
-
-	-- Анимация при наведении
-	button.MouseEnter:Connect(function()
-		tween(button, {BackgroundColor3 = Color3.fromRGB(65, 65, 75)}, 0.2)
-	end)
-	button.MouseLeave:Connect(function()
-		tween(button, {BackgroundColor3 = Color3.fromRGB(50, 50, 60)}, 0.2)
-	end)
-
-	return button
-end
-
---// ФУНКЦИЯ СОЗДАНИЯ TOGGLE-КНОПКИ
-local function createToggleButton(parent, text, toggleName, callback)
-	local button = createButton(parent, text, nil)
-	local originalColor = button.BackgroundColor3
-	local toggledColor = Color3.fromRGB(80, 80, 150)
-	local isToggled = toggles[toggleName]
-
-	local function updateColor()
-		if toggles[toggleName] then
-			button.BackgroundColor3 = toggledColor
-			button.Text = text .. " [ON]"
-		else
-			button.BackgroundColor3 = originalColor
-			button.Text = text .. " [OFF]"
 		end
 	end
+end)
 
-	updateColor()
-
-	button.MouseButton1Click:Connect(function()
-		toggles[toggleName] = not toggles[toggleName]
-		updateColor()
-		if callback then
-			callback(toggles[toggleName])
-		end
-	end)
-
-	return button
-end
-
---// --- РЕАЛИЗАЦИЯ ФУНКЦИЙ ---
-
--- 1. Set Home
-local function setHome()
-	homePosition = rootPart.CFrame
-	print("Точка дома установлена на:", homePosition.Position)
-	-- Можно добавить визуальное уведомление
-end
-
--- 2. Teleport to Home
-local function teleportHome()
-	if homePosition then
-		rootPart.CFrame = homePosition
-	else
-		print("Точка дома не установлена!")
-	end
-end
-
--- 3. Blink Teleport
-local function blinkTeleport()
-	if homePosition then
-		local originalCFrame = rootPart.CFrame
-		rootPart.CFrame = homePosition
-		wait(0.05) -- Задержка в 50 миллисекунд
-		rootPart.CFrame = originalCFrame
-	else
-		print("Точка дома не установлена!")
-	end
-end
-
--- 4. Speed Hack
-local function setSpeed(enabled)
-	if enabled then
-		humanoid.WalkSpeed = 50
-	else
-		humanoid.WalkSpeed = 16 -- Стандартная скорость
-	end
-end
-
--- 5. NoClip
-local function setNoClip(enabled)
-	toggles.noClip = enabled
-end
-
--- 6. Infinite Jump
-local function setInfiniteJump(enabled)
-	if enabled then
-		UserInputService.JumpRequest:Connect(function()
-			if toggles.infJump then -- Проверяем, активен ли чит
-				humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+-- 🧠 Службы
+runService.Stepped:Connect(function()
+	if noclipEnabled and char then
+		for _, part in pairs(char:GetDescendants()) do
+			if part:IsA("BasePart") and part.CanCollide then
+				part.CanCollide = false
 			end
-		end)
-	end
-	-- Отключение происходит через проверку `toggles.infJump`
-end
-
--- 7. ESP
-local function updateEsp()
-	-- Очистка старых ESP
-	for p, gui in pairs(espElements) do
-		if not p.Parent then -- Если игрок вышел
-			gui:Destroy()
-			espElements[p] = nil
 		end
 	end
+end)
 
-	-- Создание/Обновление ESP для всех игроков
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= player and p.Character and p.Character:FindFirstChild("Head") then
-			local head = p.Character.Head
-			local espGui = espElements[p]
-
-			if not espGui then -- Создаём новый BillboardGui
-				espGui = Instance.new("BillboardGui")
-				espGui.Name = "PlayerESP"
-				espGui.Parent = head
-				espGui.Adornee = head
-				espGui.AlwaysOnTop = true
-				espGui.Size = UDim2.new(0, 200, 0, 50)
-				espGui.StudsOffset = Vector3.new(0, 2, 0)
-
-				local textLabel = Instance.new("TextLabel")
-				textLabel.Parent = espGui
-				textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-				textLabel.BackgroundTransparency = 0.5
-				textLabel.Size = UDim2.new(1, 0, 1, 0)
-				textLabel.Font = Enum.Font.SourceSansBold
-				textLabel.TextColor3 = Color3.fromRGB(0, 255, 127) -- Ярко-зелёный
+UIS.JumpRequest:Connect(function()
+	if infJump and hum then
+		hum:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end)
