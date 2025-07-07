@@ -18,10 +18,10 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SimpleMenuGui"
 screenGui.Parent = playerGui
 
--- Меню
+-- Меню (уменьшенный размер)
 local menuFrame = Instance.new("Frame")
-menuFrame.Size = UDim2.new(0, 300, 0, 400)
-menuFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+menuFrame.Size = UDim2.new(0, 280, 0, 360)
+menuFrame.Position = UDim2.new(0.5, -140, 0.5, -180)
 menuFrame.BackgroundColor3 = COLORS.Panel
 menuFrame.BorderSizePixel = 0
 menuFrame.Visible = false
@@ -51,6 +51,52 @@ titleLabel.TextSize = 24
 titleLabel.TextColor3 = COLORS.Accent
 titleLabel.LayoutOrder = 0
 titleLabel.Parent = menuFrame
+
+-- Прозрачный Frame для перетаскивания меню за пустой фон
+local dragArea = Instance.new("Frame")
+dragArea.Size = UDim2.new(1, 0, 1, 0)
+dragArea.BackgroundTransparency = 1
+dragArea.ZIndex = 0
+dragArea.Parent = menuFrame
+
+dragArea.Active = true
+dragArea.Selectable = true
+
+local dragging = false
+local dragInput, dragStart, startPos
+
+dragArea.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = menuFrame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+dragArea.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        local newPos = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+        menuFrame.Position = newPos
+    end
+end)
 
 local function createButton(text, layoutOrder)
     local btn = Instance.new("TextButton")
@@ -84,6 +130,7 @@ local states = {
     speedHack = false,
     esp = false,
     homePosition = nil,
+    homeBtnVisible = false,
 }
 
 local buttons = {}
@@ -127,6 +174,11 @@ local function setHome()
     if hrp then
         states.homePosition = hrp.CFrame
         buttons.setHome.Text = "Set Home: ✔"
+        -- Показать кнопку дома
+        if not states.homeBtnVisible then
+            states.homeBtnVisible = true
+            homeButton.Visible = true
+        end
     end
 end
 
@@ -137,7 +189,7 @@ local function tpHome()
     if hrp then
         local originalPos = hrp.CFrame
         hrp.CFrame = states.homePosition
-        wait(0.001)
+        wait(0.05)
         hrp.CFrame = originalPos
     end
 end
@@ -237,11 +289,6 @@ toggleBtn.Font = Enum.Font.GothamBold
 toggleBtn.TextSize = 18
 toggleBtn.AutoButtonColor = false
 toggleBtn.Parent = screenGui
-local function addUICorner(parent, radius)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, radius or 12)
-    corner.Parent = parent
-end
 addUICorner(toggleBtn, 15)
 
 toggleBtn.MouseEnter:Connect(function()
@@ -258,40 +305,68 @@ toggleBtn.MouseButton1Click:Connect(function()
     menuFrame.Visible = menuOpen
 end)
 
--- Перемещение меню (dragging)
-local dragging = false
-local dragInput, dragStart, startPos
+-- МАЛЕНЬКАЯ КНОПКА ДОМА (для TP Home с возвратом), изначально скрыта
+local homeButton = Instance.new("TextButton")
+homeButton.Size = UDim2.new(0, 50, 0, 50)
+homeButton.Position = UDim2.new(0, 100, 0, 20)
+homeButton.BackgroundColor3 = COLORS.Accent
+homeButton.BorderSizePixel = 0
+homeButton.Text = "Home"
+homeButton.TextColor3 = Color3.new(1,1,1)
+homeButton.Font = Enum.Font.GothamBold
+homeButton.TextSize = 14
+homeButton.Visible = false
+homeButton.AutoButtonColor = false
+homeButton.Parent = screenGui
+addUICorner(homeButton, 12)
 
-menuFrame.InputBegan:Connect(function(input)
+-- Перетаскиваем homeButton
+local homeDragging = false
+local homeDragInput, homeDragStart, homeStartPos
+
+homeButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = menuFrame.Position
+        homeDragging = true
+        homeDragStart = input.Position
+        homeStartPos = homeButton.Position
 
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
+                homeDragging = false
             end
         end)
     end
 end)
 
-menuFrame.InputChanged:Connect(function(input)
+homeButton.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
+        homeDragInput = input
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
+    if input == homeDragInput and homeDragging then
+        local delta = input.Position - homeDragStart
         local newPos = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
+            homeStartPos.X.Scale,
+            homeStartPos.X.Offset + delta.X,
+            homeStartPos.Y.Scale,
+            homeStartPos.Y.Offset + delta.Y
         )
-        menuFrame.Position = newPos
+        homeButton.Position = newPos
+    end
+end)
+
+-- При клике homeButton — TP Home + возврат
+homeButton.MouseButton1Click:Connect(function()
+    if not states.homePosition then return end
+    local char = getCharacter()
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        local originalPos = hrp.CFrame
+        hrp.CFrame = states.homePosition
+        wait(0.05)
+        hrp.CFrame = originalPos
     end
 end)
 
