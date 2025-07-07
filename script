@@ -1,387 +1,333 @@
---[[
-    Modern & Draggable Mobile Admin Menu by Gemini
-    Features: Draggable UI, Mobile Friendly Toggle Button
-]]
-
--- Services
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
--- Player and Character
-local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Humanoid = Character:WaitForChild("Humanoid")
-local RootPart = Character:WaitForChild("HumanoidRootPart")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
--- GUI Elements
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-ScreenGui.ResetOnSpawn = false
+local COLORS = {
+    Panel = Color3.fromRGB(45, 45, 60),
+    Button = Color3.fromRGB(70, 70, 90),
+    ButtonHover = Color3.fromRGB(100, 100, 140),
+    Text = Color3.fromRGB(220, 220, 230),
+    Accent = Color3.fromRGB(120, 150, 240),
+}
 
--- =================================================================
--- Draggable Function - делает любой GUI элемент перетаскиваемым
--- =================================================================
-local function makeDraggable(guiObject)
-    local dragging = false
-    local dragInput = nil
-    local dragStart = nil
-    local startPos = nil
+-- Создаем ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SimpleMenuGui"
+screenGui.Parent = playerGui
 
-    guiObject.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = guiObject.Position
-            
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
+-- Меню
+local menuFrame = Instance.new("Frame")
+menuFrame.Size = UDim2.new(0, 300, 0, 400)
+menuFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+menuFrame.BackgroundColor3 = COLORS.Panel
+menuFrame.BorderSizePixel = 0
+menuFrame.Visible = false
+menuFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+menuFrame.Parent = screenGui
 
-    UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            if dragging and dragInput == nil then -- Используем dragInput, чтобы избежать конфликтов
-                local newPos = startPos + UDim2.fromOffset(input.Position.X - dragStart.X, input.Position.Y - dragStart.Y)
-                
-                -- Плавное перемещение с помощью Tween
-                local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Linear)
-                TweenService:Create(guiObject, tweenInfo, {Position = newPos}):Play()
-            end
-        end
-    end)
-    
-    guiObject.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end)
-end
-
-
--- =================================================================
--- GUI Creation
--- =================================================================
-
--- Main Frame
-local MainFrame = Instance.new("Frame")
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-MainFrame.BorderColor3 = Color3.fromRGB(80, 80, 100)
-MainFrame.BorderSizePixel = 1
-MainFrame.Size = UDim2.new(0, 400, 0, 250)
-MainFrame.Position = UDim2.new(0.5, -200, 0.5, -125)
-MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-MainFrame.Visible = false
-MainFrame.ClipsDescendants = true
-
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 12)
-UICorner.Parent = MainFrame
-
-local UIShadow = Instance.new("ImageLabel")
-UIShadow.Parent = MainFrame
-UIShadow.BackgroundTransparency = 1
-UIShadow.Image = "rbxassetid://10376373887" -- Тень
-UIShadow.ImageColor3 = Color3.new(0, 0, 0)
-UIShadow.ImageTransparency = 0.6
-UIShadow.ScaleType = Enum.ScaleType.Slice
-UIShadow.SliceCenter = Rect.new(49, 49, 450, 450)
-UIShadow.Size = UDim2.new(1, 14, 1, 14)
-UIShadow.Position = UDim2.new(0, -7, 0, -7)
-UIShadow.ZIndex = -1
-
--- Header
-local Header = Instance.new("Frame")
-Header.Parent = MainFrame
-Header.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-Header.Size = UDim2.new(1, 0, 0, 40)
-makeDraggable(MainFrame) -- Делаем всё окно перетаскиваемым за шапку
-
-local Title = Instance.new("TextLabel")
-Title.Parent = Header
-Title.Text = "Gemini Menu"
-Title.Font = Enum.Font.GothamSemibold
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 18
-Title.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-Title.Size = UDim2.new(1, 0, 1, 0)
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.TextWrapped = true
-Title.Position = UDim2.new(0, 15, 0, 0)
-
--- Container for buttons
-local ButtonContainer = Instance.new("ScrollingFrame")
-ButtonContainer.Parent = MainFrame
-ButtonContainer.Size = UDim2.new(1, -20, 1, -50)
-ButtonContainer.Position = UDim2.new(0, 10, 0, 40)
-ButtonContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-ButtonContainer.BorderSizePixel = 0
-ButtonContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
-ButtonContainer.ScrollBarImageColor3 = Color3.fromRGB(120, 120, 140)
-ButtonContainer.ScrollBarThickness = 5
-
-local UIGridLayout = Instance.new("UIGridLayout")
-UIGridLayout.Parent = ButtonContainer
-UIGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIGridLayout.CellPadding = UDim2.new(0, 5, 0, 5)
-UIGridLayout.CellSize = UDim2.new(0, 120, 0, 35)
-
--- Menu state and animations
-local menuOpen = false
-local animationInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-
--- Function to create buttons
-local function createButton(text, callback)
-    local button = Instance.new("TextButton")
-    button.Name = text .. "Button"
-    button.Parent = ButtonContainer
-    button.Text = text
-    button.Font = Enum.Font.Gotham
-    button.TextSize = 16
-    button.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    button.TextColor3 = Color3.fromRGB(220, 220, 220)
-    button.LayoutOrder = #ButtonContainer:GetChildren()
-
+local function addUICorner(parent, radius)
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = button
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Parent = button
-    stroke.Color = Color3.fromRGB(80, 80, 100)
-    stroke.Thickness = 0
-
-    local isToggled = false
-
-    button.MouseEnter:Connect(function()
-        TweenService:Create(button, animationInfo, { BackgroundColor3 = Color3.fromRGB(70, 70, 80) }):Play()
-        TweenService:Create(stroke, animationInfo, { Thickness = 1 }):Play()
-    end)
-
-    button.MouseLeave:Connect(function()
-        if not isToggled then
-            TweenService:Create(button, animationInfo, { BackgroundColor3 = Color3.fromRGB(50, 50, 60) }):Play()
-            TweenService:Create(stroke, animationInfo, { Thickness = 0 }):Play()
-        end
-    end)
-
-    button.MouseButton1Click:Connect(function()
-        isToggled = not isToggled
-        if isToggled then
-            TweenService:Create(button, animationInfo, { BackgroundColor3 = Color3.fromRGB(80, 120, 200) }):Play()
-            stroke.Color = Color3.fromRGB(120, 160, 240)
-        else
-            TweenService:Create(button, animationInfo, { BackgroundColor3 = Color3.fromRGB(70, 70, 80) }):Play()
-            stroke.Color = Color3.fromRGB(80, 80, 100)
-        end
-        callback(isToggled)
-    end)
-    
-    return button
+    corner.CornerRadius = UDim.new(0, radius or 12)
+    corner.Parent = parent
 end
 
--- =================================================================
--- Functions
--- =================================================================
-local infJumpActive = false
-local noclipActive = false
-local espActive = false
-local homePosition = nil
+addUICorner(menuFrame)
 
--- Inf Jump
-createButton("Inf Jump", function(toggled)
-    infJumpActive = toggled
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = menuFrame
+UIListLayout.Padding = UDim.new(0, 12)
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -20, 0, 50)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Simple Roblox Menu"
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 24
+titleLabel.TextColor3 = COLORS.Accent
+titleLabel.LayoutOrder = 0
+titleLabel.Parent = menuFrame
+
+local function createButton(text, layoutOrder)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, 40)
+    btn.Position = UDim2.new(0, 10, 0, 0)
+    btn.BackgroundColor3 = COLORS.Button
+    btn.BorderSizePixel = 0
+    btn.TextColor3 = COLORS.Text
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 18
+    btn.Text = text
+    btn.AutoButtonColor = false
+    btn.LayoutOrder = layoutOrder
+    addUICorner(btn)
+    btn.Parent = menuFrame
+
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = COLORS.ButtonHover
+    end)
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundColor3 = COLORS.Button
+    end)
+
+    return btn
+end
+
+-- Состояния
+local states = {
+    infJump = false,
+    noclip = false,
+    speedHack = false,
+    esp = false,
+    homePosition = nil,
+}
+
+local buttons = {}
+
+local function getCharacter()
+    return player.Character or player.CharacterAdded:Wait()
+end
+
+local function getHumanoid()
+    local char = getCharacter()
+    return char:WaitForChild("Humanoid")
+end
+
+-- Функции кнопок
+
+local function toggleInfJump()
+    states.infJump = not states.infJump
+    buttons.infJump.Text = "Inf Jump: " .. (states.infJump and "ON" or "OFF")
+end
+
+local function toggleNoclip()
+    states.noclip = not states.noclip
+    buttons.noclip.Text = "Noclip: " .. (states.noclip and "ON" or "OFF")
+end
+
+local SPEED_VALUE = 50
+local function toggleSpeedHack()
+    states.speedHack = not states.speedHack
+    local humanoid = getHumanoid()
+    if states.speedHack then
+        humanoid.WalkSpeed = SPEED_VALUE
+    else
+        humanoid.WalkSpeed = 16
+    end
+    buttons.speedHack.Text = "Speed Hack (50): " .. (states.speedHack and "ON" or "OFF")
+end
+
+local function setHome()
+    local char = getCharacter()
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        states.homePosition = hrp.CFrame
+        buttons.setHome.Text = "Set Home: ✔"
+    end
+end
+
+local function tpHome()
+    if not states.homePosition then return end
+    local char = getCharacter()
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        local originalPos = hrp.CFrame
+        hrp.CFrame = states.homePosition
+        wait(0.001)
+        hrp.CFrame = originalPos
+    end
+end
+
+-- ESP (простые имена игроков)
+
+local espLabels = {}
+
+local function createESPForPlayer(plr)
+    if plr == player then return end
+    local char = plr.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Adornee = hrp
+    billboard.Size = UDim2.new(0, 100, 0, 30)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = screenGui
+
+    local label = Instance.new("TextLabel", billboard)
+    label.BackgroundTransparency = 0.6
+    label.BackgroundColor3 = Color3.new(0, 0, 0)
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.Text = plr.Name
+    label.Font = Enum.Font.GothamBold
+    label.TextScaled = true
+
+    espLabels[plr] = billboard
+end
+
+local function removeESPForPlayer(plr)
+    if espLabels[plr] then
+        espLabels[plr]:Destroy()
+        espLabels[plr] = nil
+    end
+end
+
+local function toggleESP()
+    states.esp = not states.esp
+    buttons.esp.Text = "ESP: " .. (states.esp and "ON" or "OFF")
+    if states.esp then
+        for _, plr in pairs(Players:GetPlayers()) do
+            createESPForPlayer(plr)
+        end
+    else
+        for plr, _ in pairs(espLabels) do
+            removeESPForPlayer(plr)
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function()
+        wait(1)
+        if states.esp then
+            createESPForPlayer(plr)
+        end
+    end)
 end)
 
-UserInputService.JumpRequest:Connect(function()
-    if infJumpActive then
-        Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+Players.PlayerRemoving:Connect(function(plr)
+    removeESPForPlayer(plr)
+end)
+
+-- Создаем кнопки
+
+buttons.infJump = createButton("Inf Jump: OFF", 1)
+buttons.infJump.MouseButton1Click:Connect(toggleInfJump)
+
+buttons.noclip = createButton("Noclip: OFF", 2)
+buttons.noclip.MouseButton1Click:Connect(toggleNoclip)
+
+buttons.speedHack = createButton("Speed Hack (50): OFF", 3)
+buttons.speedHack.MouseButton1Click:Connect(toggleSpeedHack)
+
+buttons.setHome = createButton("Set Home", 4)
+buttons.setHome.MouseButton1Click:Connect(setHome)
+
+buttons.tpHome = createButton("TP Home", 5)
+buttons.tpHome.MouseButton1Click:Connect(tpHome)
+
+buttons.esp = createButton("ESP: OFF", 6)
+buttons.esp.MouseButton1Click:Connect(toggleESP)
+
+-- Кнопка вызова меню
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0, 60, 0, 60)
+toggleBtn.Position = UDim2.new(0, 20, 0, 20)
+toggleBtn.BackgroundColor3 = COLORS.Accent
+toggleBtn.BorderSizePixel = 0
+toggleBtn.Text = "Menu"
+toggleBtn.TextColor3 = Color3.new(1,1,1)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 18
+toggleBtn.AutoButtonColor = false
+toggleBtn.Parent = screenGui
+local function addUICorner(parent, radius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius or 12)
+    corner.Parent = parent
+end
+addUICorner(toggleBtn, 15)
+
+toggleBtn.MouseEnter:Connect(function()
+    toggleBtn.BackgroundColor3 = COLORS.ButtonHover
+end)
+toggleBtn.MouseLeave:Connect(function()
+    toggleBtn.BackgroundColor3 = COLORS.Accent
+end)
+
+local menuOpen = false
+
+toggleBtn.MouseButton1Click:Connect(function()
+    menuOpen = not menuOpen
+    menuFrame.Visible = menuOpen
+end)
+
+-- Перемещение меню (dragging)
+local dragging = false
+local dragInput, dragStart, startPos
+
+menuFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = menuFrame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
     end
 end)
 
--- Noclip
-createButton("Noclip", function(toggled)
-    noclipActive = toggled
+menuFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
 end)
 
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        local newPos = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+        menuFrame.Position = newPos
+    end
+end)
+
+-- Inf Jump обработка
+UserInputService.JumpRequest:Connect(function()
+    if states.infJump then
+        local humanoid = getHumanoid()
+        if humanoid then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- Noclip обработка
 RunService.Stepped:Connect(function()
-    if noclipActive and Character and Humanoid and Humanoid.Health > 0 then
-        for _, part in ipairs(Character:GetDescendants()) do
-            if part:IsA("BasePart") then
+    local char = getCharacter()
+    if states.noclip and char then
+        for _, part in pairs(char:GetChildren()) do
+            if part:IsA("BasePart") and part.CanCollide then
                 part.CanCollide = false
             end
         end
-    end
-end)
-
-
--- Speed Hack
-createButton("Speed (50)", function(toggled)
-    if toggled then
-        Humanoid.WalkSpeed = 50
-    else
-        Humanoid.WalkSpeed = 16 -- Default speed
-    end
-end)
-
--- Set Home
-local setHomeButton = Instance.new("TextButton")
-setHomeButton.Parent = ButtonContainer -- This is to add it to the layout
-local tempCallback = function() end
-createButton("Set Home", tempCallback)
--- We remove the created button and reuse its name for our custom logic one
-ButtonContainer:FindFirstChild("Set HomeButton"):Destroy()
-setHomeButton = createButton("Set Home", tempCallback) -- Re-create with correct style
-setHomeButton.MouseButton1Click:Connect(function()
-    homePosition = RootPart.CFrame
-    setHomeButton.Text = "Home Set!"
-    TweenService:Create(setHomeButton, animationInfo, { BackgroundColor3 = Color3.fromRGB(80, 120, 200) }):Play()
-    wait(1.5)
-    setHomeButton.Text = "Set Home"
-    TweenService:Create(setHomeButton, animationInfo, { BackgroundColor3 = Color3.fromRGB(50, 50, 60) }):Play()
-end)
-
--- TP Home
-local tpHomeButton = Instance.new("TextButton")
-tpHomeButton.Parent = ButtonContainer
-createButton("TP Home", tempCallback)
-ButtonContainer:FindFirstChild("TP HomeButton"):Destroy()
-tpHomeButton = createButton("TP Home", tempCallback)
-tpHomeButton.MouseButton1Click:Connect(function()
-    if homePosition then
-        local originalPos = RootPart.CFrame
-        RootPart.CFrame = homePosition
-        wait(0.001)
-        RootPart.CFrame = originalPos
-    else
-        tpHomeButton.Text = "No Home!"
-        TweenService:Create(tpHomeButton, animationInfo, { BackgroundColor3 = Color3.fromRGB(200, 80, 80) }):Play()
-        wait(1.5)
-        tpHomeButton.Text = "TP Home"
-        TweenService:Create(tpHomeButton, animationInfo, { BackgroundColor3 = Color3.fromRGB(50, 50, 60) }):Play()
-    end
-end)
-
-
--- ESP
-local espContainer = Instance.new("Folder")
-espContainer.Name = "ESP_Container"
-espContainer.Parent = ScreenGui
-
-createButton("ESP", function(toggled)
-    espActive = toggled
-    espContainer.Parent = espActive and ScreenGui or nil
-end)
-
-local function updateEsp()
-    if not espActive then 
-        if #espContainer:GetChildren() > 0 then
-            espContainer:ClearAllChildren()
-        end
-        return 
-    end
-
-    espContainer:ClearAllChildren() -- Очищаем старые рамки
-
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-            local targetChar = player.Character
-            local targetRoot = targetChar.HumanoidRootPart
-
-            local box = Instance.new("BoxHandleAdornment")
-            box.Adornee = targetRoot
-            box.Size = targetRoot.Size + Vector3.new(1, 2, 1)
-            box.Color3 = Color3.fromRGB(255, 0, 75)
-            box.AlwaysOnTop = true
-            box.ZIndex = 5
-            box.Parent = espContainer
-
-            local nameTag = Instance.new("BillboardGui")
-            nameTag.Adornee = targetRoot
-            nameTag.AlwaysOnTop = true
-            nameTag.Size = UDim2.new(0, 100, 0, 20)
-            nameTag.StudsOffset = Vector3.new(0, 3, 0)
-            nameTag.Parent = espContainer
-
-            local textLabel = Instance.new("TextLabel")
-            textLabel.Parent = nameTag
-            textLabel.Text = player.Name
-            textLabel.Font = Enum.Font.Gotham
-            textLabel.TextSize = 14
-            textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            textLabel.BackgroundColor3 = Color3.new(0,0,0)
-            textLabel.BackgroundTransparency = 0.4
-            textLabel.Size = UDim2.new(1, 0, 1, 0)
-            
-            local corner = Instance.new("UICorner", textLabel)
-            corner.CornerRadius = UDim.new(0, 4)
+    elseif char then
+        for _, part in pairs(char:GetChildren()) do
+            if part:IsA("BasePart") and not part.CanCollide then
+                part.CanCollide = true
+            end
         end
     end
-end
+end)
 
-RunService.RenderStepped:Connect(updateEsp)
-
--- =================================================================
--- Mobile Toggle Button
--- =================================================================
-local ToggleButton = Instance.new("ImageButton")
-ToggleButton.Parent = ScreenGui
-ToggleButton.Name = "MenuToggleButton"
-ToggleButton.Image = "rbxassetid://6034842399" -- Иконка "настройки"
-ToggleButton.ImageColor3 = Color3.fromRGB(220, 220, 220)
-ToggleButton.BackgroundTransparency = 1
-ToggleButton.Size = UDim2.new(0, 50, 0, 50)
-ToggleButton.Position = UDim2.new(1, -65, 0, 15) -- Правый верхний угол
-makeDraggable(ToggleButton) -- Делаем кнопку перетаскиваемой
-
-local buttonShadow = Instance.new("ImageLabel")
-buttonShadow.Parent = ToggleButton
-buttonShadow.ZIndex = -1
-buttonShadow.BackgroundTransparency = 1
-buttonShadow.Image = "rbxassetid://10376373887"
-buttonShadow.ImageColor3 = Color3.new(0, 0, 0)
-buttonShadow.ImageTransparency = 0.5
-buttonShadow.ScaleType = Enum.ScaleType.Slice
-buttonShadow.SliceCenter = Rect.new(49, 49, 450, 450)
-buttonShadow.Size = UDim2.new(1, 10, 1, 10)
-buttonShadow.Position = UDim2.new(0, -5, 0, -5)
-
--- Toggle Menu Visibility
-local function toggleMenu()
-    menuOpen = not menuOpen
-    
-    local goal
-    if menuOpen then
-        MainFrame.Visible = true
-        MainFrame.Size = UDim2.new(0, 400, 0, 0)
-        MainFrame.Position = UDim2.new(0.5, -200, 0.5, 0)
-        
-        goal = {
-            Size = UDim2.new(0, 400, 0, 250),
-            Position = UDim2.new(0.5, -200, 0.5, -125),
-        }
-    else
-        goal = {
-            Size = UDim2.new(0, 400, 0, 0),
-            Position = UDim2.new(0.5, -200, 0.5, 0),
-        }
+-- Сброс скорости при респавне, если нужно
+player.CharacterAdded:Connect(function(char)
+    wait(1)
+    if states.speedHack then
+        local humanoid = char:WaitForChild("Humanoid")
+        humanoid.WalkSpeed = SPEED_VALUE
     end
-    
-    local tween = TweenService:Create(MainFrame, animationInfo, goal)
-    tween:Play()
-    
-    tween.Completed:Connect(function()
-        if not menuOpen then
-            MainFrame.Visible = false
-        end
-    end)
-end
-
--- Подключаем функцию к кнопке
-ToggleButton.MouseButton1Click:Connect(toggleMenu)
+end)
