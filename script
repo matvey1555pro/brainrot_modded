@@ -142,7 +142,7 @@ buttons.tpHome.MouseButton1Click:Connect(function()
     if hrp and states.homePosition then
         local original = hrp.CFrame
         hrp.CFrame = states.homePosition
-        wait(0.05)
+        wait(0.50)
         hrp.CFrame = original
     end
 end)
