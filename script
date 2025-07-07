@@ -13,19 +13,17 @@ local COLORS = {
     Accent = Color3.fromRGB(120, 150, 240),
 }
 
--- Создаем ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SimpleMenuGui"
 screenGui.Parent = playerGui
 
--- Меню (уменьшенный размер)
 local menuFrame = Instance.new("Frame")
 menuFrame.Size = UDim2.new(0, 280, 0, 360)
-menuFrame.Position = UDim2.new(0.5, -140, 0.5, -180)
+menuFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+menuFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 menuFrame.BackgroundColor3 = COLORS.Panel
 menuFrame.BorderSizePixel = 0
 menuFrame.Visible = false
-menuFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 menuFrame.Parent = screenGui
 
 local function addUICorner(parent, radius)
@@ -33,39 +31,13 @@ local function addUICorner(parent, radius)
     corner.CornerRadius = UDim.new(0, radius or 12)
     corner.Parent = parent
 end
-
 addUICorner(menuFrame)
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Parent = menuFrame
-UIListLayout.Padding = UDim.new(0, 12)
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -20, 0, 50)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "Simple Roblox Menu"
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 24
-titleLabel.TextColor3 = COLORS.Accent
-titleLabel.LayoutOrder = 0
-titleLabel.Parent = menuFrame
-
--- Прозрачный Frame для перетаскивания меню за пустой фон
-local dragArea = Instance.new("Frame")
-dragArea.Size = UDim2.new(1, 0, 1, 0)
-dragArea.BackgroundTransparency = 1
-dragArea.ZIndex = 0
-dragArea.Parent = menuFrame
-
-dragArea.Active = true
-dragArea.Selectable = true
-
-local dragging = false
-local dragInput, dragStart, startPos
-
-dragArea.InputBegan:Connect(function(input)
+-- Для перетаскивания меню за фон (menuFrame)
+local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
+menuFrame.Active = true
+menuFrame.Selectable = true
+menuFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
         dragStart = input.Position
@@ -79,7 +51,7 @@ dragArea.InputBegan:Connect(function(input)
     end
 end)
 
-dragArea.InputChanged:Connect(function(input)
+menuFrame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement then
         dragInput = input
     end
@@ -88,20 +60,43 @@ end)
 UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
         local delta = input.Position - dragStart
-        local newPos = UDim2.new(
+        menuFrame.Position = UDim2.new(
             startPos.X.Scale,
             startPos.X.Offset + delta.X,
             startPos.Y.Scale,
             startPos.Y.Offset + delta.Y
         )
-        menuFrame.Position = newPos
     end
 end)
 
+-- Заголовок
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -20, 0, 40)
+titleLabel.Position = UDim2.new(0, 10, 0, 10)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Simple Roblox Menu"
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 24
+titleLabel.TextColor3 = COLORS.Accent
+titleLabel.Parent = menuFrame
+
+-- Контейнер для кнопок
+local buttonsContainer = Instance.new("Frame")
+buttonsContainer.Size = UDim2.new(1, -20, 1, -70)
+buttonsContainer.Position = UDim2.new(0, 10, 0, 60)
+buttonsContainer.BackgroundTransparency = 1
+buttonsContainer.Parent = menuFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = buttonsContainer
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 10)
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- Создание кнопки с эффектом наведения
 local function createButton(text, layoutOrder)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -20, 0, 40)
-    btn.Position = UDim2.new(0, 10, 0, 0)
+    btn.Size = UDim2.new(1, 0, 0, 40)
     btn.BackgroundColor3 = COLORS.Button
     btn.BorderSizePixel = 0
     btn.TextColor3 = COLORS.Text
@@ -111,7 +106,6 @@ local function createButton(text, layoutOrder)
     btn.AutoButtonColor = false
     btn.LayoutOrder = layoutOrder
     addUICorner(btn)
-    btn.Parent = menuFrame
 
     btn.MouseEnter:Connect(function()
         btn.BackgroundColor3 = COLORS.ButtonHover
@@ -120,6 +114,7 @@ local function createButton(text, layoutOrder)
         btn.BackgroundColor3 = COLORS.Button
     end)
 
+    btn.Parent = buttonsContainer
     return btn
 end
 
@@ -174,7 +169,6 @@ local function setHome()
     if hrp then
         states.homePosition = hrp.CFrame
         buttons.setHome.Text = "Set Home: ✔"
-        -- Показать кнопку дома
         if not states.homeBtnVisible then
             states.homeBtnVisible = true
             homeButton.Visible = true
@@ -299,13 +293,12 @@ toggleBtn.MouseLeave:Connect(function()
 end)
 
 local menuOpen = false
-
 toggleBtn.MouseButton1Click:Connect(function()
     menuOpen = not menuOpen
     menuFrame.Visible = menuOpen
 end)
 
--- МАЛЕНЬКАЯ КНОПКА ДОМА (для TP Home с возвратом), изначально скрыта
+-- Маленькая кнопка "Home"
 local homeButton = Instance.new("TextButton")
 homeButton.Size = UDim2.new(0, 50, 0, 50)
 homeButton.Position = UDim2.new(0, 100, 0, 20)
@@ -320,10 +313,8 @@ homeButton.AutoButtonColor = false
 homeButton.Parent = screenGui
 addUICorner(homeButton, 12)
 
--- Перетаскиваем homeButton
-local homeDragging = false
-local homeDragInput, homeDragStart, homeStartPos
-
+-- Перетаскивание кнопки "Home"
+local homeDragging, homeDragInput, homeDragStart, homeStartPos = false, nil, nil, nil
 homeButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         homeDragging = true
@@ -337,27 +328,23 @@ homeButton.InputBegan:Connect(function(input)
         end)
     end
 end)
-
 homeButton.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement then
         homeDragInput = input
     end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
     if input == homeDragInput and homeDragging then
         local delta = input.Position - homeDragStart
-        local newPos = UDim2.new(
+        homeButton.Position = UDim2.new(
             homeStartPos.X.Scale,
             homeStartPos.X.Offset + delta.X,
             homeStartPos.Y.Scale,
             homeStartPos.Y.Offset + delta.Y
         )
-        homeButton.Position = newPos
     end
 end)
 
--- При клике homeButton — TP Home + возврат
 homeButton.MouseButton1Click:Connect(function()
     if not states.homePosition then return end
     local char = getCharacter()
@@ -398,7 +385,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Сброс скорости при респавне, если нужно
+-- Сброс скорости при респавне
 player.CharacterAdded:Connect(function(char)
     wait(1)
     if states.speedHack then
