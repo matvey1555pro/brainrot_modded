@@ -1,216 +1,262 @@
+-- Modern Menu + All Functions + God Mode
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
+local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local Root = Character:WaitForChild("HumanoidRootPart")
 
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+-- ======= GUI =======
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ModernMenu"
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
 
-local COLORS = {
-    Panel = Color3.fromRGB(45, 45, 60),
-    Button = Color3.fromRGB(70, 70, 90),
-    ButtonHover = Color3.fromRGB(100, 100, 140),
-    Text = Color3.fromRGB(220, 220, 230),
-    Accent = Color3.fromRGB(120, 150, 240),
-}
+-- Toggle Circle
+local ToggleButton = Instance.new("Frame")
+ToggleButton.Size = UDim2.new(0, 40, 0, 40)
+ToggleButton.Position = UDim2.new(0, 50, 0, 200)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.AnchorPoint = Vector2.new(0.5,0.5)
+ToggleButton.Parent = ScreenGui
+ToggleButton.Active = true
+ToggleButton.Draggable = true
+Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(1,0)
+Instance.new("UIStroke", ToggleButton).Color = Color3.fromRGB(200,200,200)
 
--- ScreenGui
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "CompactMenuGui"
-screenGui.Parent = playerGui
-
--- Menu Frame (уменьшено в 2 раза)
-local menuFrame = Instance.new("Frame")
-menuFrame.Size = UDim2.new(0, 160, 0, 200)
-menuFrame.Position = UDim2.new(0.5, -80, 0.5, -100)
-menuFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-menuFrame.BackgroundColor3 = COLORS.Panel
-menuFrame.BorderSizePixel = 0
-menuFrame.Visible = false
-menuFrame.Parent = screenGui
-
-local function addUICorner(parent, radius)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, radius or 8)
-    corner.Parent = parent
-end
-addUICorner(menuFrame)
-
--- Dragging
-menuFrame.Active = true
-menuFrame.Draggable = true
+-- Main Menu
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 300, 0, 500)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -250)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Visible = false
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0,16)
+Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(100,100,100)
 
 -- Title
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -10, 0, 20)
-titleLabel.Position = UDim2.new(0, 5, 0, 5)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "Menu"
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 14
-titleLabel.TextColor3 = COLORS.Accent
-titleLabel.Parent = menuFrame
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,0,0,40)
+Title.BackgroundTransparency = 1
+Title.Text = "🚀 kobabov hueta"
+Title.TextColor3 = Color3.fromRGB(220,220,220)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.Parent = MainFrame
 
--- Buttons Container
-local buttonsContainer = Instance.new("Frame")
-buttonsContainer.Size = UDim2.new(1, -10, 1, -30)
-buttonsContainer.Position = UDim2.new(0, 5, 0, 25)
-buttonsContainer.BackgroundTransparency = 1
-buttonsContainer.Parent = menuFrame
-
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Parent = buttonsContainer
+-- Container
+local Container = Instance.new("Frame")
+Container.Size = UDim2.new(1,-20,1,-60)
+Container.Position = UDim2.new(0,10,0,50)
+Container.BackgroundTransparency = 1
+Container.Parent = MainFrame
+local UIListLayout = Instance.new("UIListLayout", Container)
+UIListLayout.Padding = UDim.new(0,8)
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 4)
 
--- Function to create buttons
-local function createButton(text)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 20)
-    btn.BackgroundColor3 = COLORS.Button
-    btn.BorderSizePixel = 0
-    btn.TextColor3 = COLORS.Text
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 12
-    btn.Text = text
-    btn.AutoButtonColor = false
-    addUICorner(btn, 4)
-
-    btn.MouseEnter:Connect(function()
-        btn.BackgroundColor3 = COLORS.ButtonHover
-    end)
-    btn.MouseLeave:Connect(function()
-        btn.BackgroundColor3 = COLORS.Button
-    end)
-
-    btn.Parent = buttonsContainer
-    return btn
+-- Button creator
+local function CreateButton(txt)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1,0,0,40)
+    Btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    Btn.Text = txt
+    Btn.TextColor3 = Color3.fromRGB(240,240,240)
+    Btn.Font = Enum.Font.Gotham
+    Btn.TextSize = 16
+    Btn.Parent = Container
+    Btn.AutoButtonColor = true
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0,10)
+    local stroke = Instance.new("UIStroke", Btn)
+    stroke.Color = Color3.fromRGB(80,80,80)
+    stroke.Thickness = 1.5
+    return Btn
 end
 
--- States
-local states = {
-    infJump = false,
-    noclip = false,
-    speedHack = false,
-    esp = false,
-    homePosition = nil,
-}
+-- Buttons
+local btnSetHome = CreateButton("Set Home")
+local btnTPHome = CreateButton("TP Home")
+local btnFlyHome = CreateButton("Fly to Home")
+local btnFly = CreateButton("Fly")
+local btnNoClip = CreateButton("NoClip")
+local btnFlyNoClip = CreateButton("NoClip + Fly")
+local btnESP = CreateButton("ESP")
+local btnInfJump = CreateButton("Infinite Jump")
+local btnGod = CreateButton("God Mode")
 
-local buttons = {}
+-- Fly speed slider
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Text = "Fly Speed: 50"
+SpeedLabel.Size = UDim2.new(1,0,0,30)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.TextColor3 = Color3.fromRGB(200,200,200)
+SpeedLabel.Font = Enum.Font.Gotham
+SpeedLabel.TextSize = 16
+SpeedLabel.Parent = Container
 
-local function getCharacter()
-    return player.Character or player.CharacterAdded:Wait()
-end
+local SpeedSlider = Instance.new("TextButton")
+SpeedSlider.Size = UDim2.new(1,0,0,20)
+SpeedSlider.Text = ""
+SpeedSlider.BackgroundColor3 = Color3.fromRGB(60,60,60)
+SpeedSlider.Parent = Container
+Instance.new("UICorner", SpeedSlider).CornerRadius = UDim.new(0,5)
+local SliderFill = Instance.new("Frame")
+SliderFill.Size = UDim2.new(0.5,0,1,0)
+SliderFill.BackgroundColor3 = Color3.fromRGB(200,100,250)
+SliderFill.Parent = SpeedSlider
 
-local function getHumanoid()
-    return getCharacter():WaitForChild("Humanoid")
-end
-
--- Button Functions
-buttons.infJump = createButton("Inf Jump: OFF")
-buttons.infJump.MouseButton1Click:Connect(function()
-    states.infJump = not states.infJump
-    buttons.infJump.Text = "Inf Jump: " .. (states.infJump and "ON" or "OFF")
+local flySpeed = 50
+local dragging = false
+SpeedSlider.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
 end)
-
-buttons.noclip = createButton("Noclip: OFF")
-buttons.noclip.MouseButton1Click:Connect(function()
-    states.noclip = not states.noclip
-    buttons.noclip.Text = "Noclip: " .. (states.noclip and "ON" or "OFF")
+SpeedSlider.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
 end)
-
-buttons.speedHack = createButton("SpeedHack: OFF")
-buttons.speedHack.MouseButton1Click:Connect(function()
-    states.speedHack = not states.speedHack
-    local humanoid = getHumanoid()
-    humanoid.WalkSpeed = states.speedHack and 50 or 16
-    buttons.speedHack.Text = "SpeedHack: " .. (states.speedHack and "ON" or "OFF")
-end)
-
-buttons.setHome = createButton("Set Home")
-buttons.setHome.MouseButton1Click:Connect(function()
-    local hrp = getCharacter():FindFirstChild("HumanoidRootPart")
-    if hrp then
-        states.homePosition = hrp.CFrame
-        buttons.setHome.Text = "Set Home: ✔"
-        homeButton.Visible = true
+RunService.RenderStepped:Connect(function()
+    if dragging then
+        local mouse = UIS:GetMouseLocation()
+        local pos = math.clamp(mouse.X - SpeedSlider.AbsolutePosition.X,0,SpeedSlider.AbsoluteSize.X)
+        SliderFill.Size = UDim2.new(pos/SpeedSlider.AbsoluteSize.X,0,1,0)
+        flySpeed = math.floor((pos/SpeedSlider.AbsoluteSize.X)*100)
+        SpeedLabel.Text = "Fly Speed: "..flySpeed
     end
 end)
 
-buttons.tpHome = createButton("TP Home")
-buttons.tpHome.MouseButton1Click:Connect(function()
-    local hrp = getCharacter():FindFirstChild("HumanoidRootPart")
-    if hrp and states.homePosition then
-        local original = hrp.CFrame
-        hrp.CFrame = states.homePosition
-        wait(0.50)
-        hrp.CFrame = original
+-- Toggle menu
+ToggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        MainFrame.Visible = not MainFrame.Visible
     end
 end)
 
-buttons.esp = createButton("ESP: OFF")
-buttons.esp.MouseButton1Click:Connect(function()
-    states.esp = not states.esp
-    buttons.esp.Text = "ESP: " .. (states.esp and "ON" or "OFF")
+-- ======= Functional Variables =======
+local homePos = nil
+local flyActive = false
+local flyActive2 = false
+local noclipActive = false
+local espActive = false
+local infJumpActive = false
+local flyNoClipActive = false
+local godActive = false
+
+-- Set Home
+btnSetHome.MouseButton1Click:Connect(function()
+    homePos = Root.Position
 end)
 
--- Inf Jump
-UserInputService.JumpRequest:Connect(function()
-    if states.infJump then
-        local humanoid = getHumanoid()
-        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+-- TP Home
+btnTPHome.MouseButton1Click:Connect(function()
+    if homePos then Root.CFrame = CFrame.new(homePos) end
+end)
+
+-- Fly to Home
+btnFlyHome.MouseButton1Click:Connect(function()
+    if homePos then
+        flyActive = true
+        while (Root.Position - homePos).Magnitude > 2 and flyActive do
+            local dir = (homePos - Root.Position).Unit
+            Root.Velocity = dir * flySpeed
+            RunService.RenderStepped:Wait()
+        end
+        Root.Velocity = Vector3.new(0,0,0)
+        flyActive = false
     end
 end)
 
--- Noclip
-RunService.Stepped:Connect(function()
-    if states.noclip then
-        for _, part in pairs(getCharacter():GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
+-- Fly
+btnFly.MouseButton1Click:Connect(function()
+    flyActive2 = not flyActive2
+end)
+
+-- NoClip
+btnNoClip.MouseButton1Click:Connect(function()
+    noclipActive = not noclipActive
+end)
+
+-- Fly + NoClip
+btnFlyNoClip.MouseButton1Click:Connect(function()
+    flyNoClipActive = not flyNoClipActive
+end)
+
+-- ESP
+btnESP.MouseButton1Click:Connect(function()
+    espActive = not espActive
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            if espActive then
+                local box = Instance.new("BoxHandleAdornment")
+                box.Adornee = plr.Character.HumanoidRootPart
+                box.Size = Vector3.new(2,3,1)
+                box.Color3 = Color3.fromRGB(255,0,0)
+                box.AlwaysOnTop = true
+                box.Parent = plr.Character.HumanoidRootPart
+            else
+                local adorn = plr.Character.HumanoidRootPart:FindFirstChildOfClass("BoxHandleAdornment")
+                if adorn then adorn:Destroy() end
             end
         end
     end
 end)
 
--- Toggle Menu Button
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0, 50, 0, 50)
-toggleBtn.Position = UDim2.new(0, 10, 0, 10)
-toggleBtn.BackgroundColor3 = COLORS.Accent
-toggleBtn.Text = "≡"
-toggleBtn.TextColor3 = COLORS.Text
-toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.TextSize = 24
-toggleBtn.Parent = screenGui
-addUICorner(toggleBtn, 10)
-
-toggleBtn.MouseButton1Click:Connect(function()
-    menuFrame.Visible = not menuFrame.Visible
+-- Infinite Jump
+btnInfJump.MouseButton1Click:Connect(function()
+    infJumpActive = not infJumpActive
 end)
 
--- Home Button
-local homeButton = Instance.new("TextButton")
-homeButton.Size = UDim2.new(0, 40, 0, 40)
-homeButton.Position = UDim2.new(0, 70, 0, 10)
-homeButton.BackgroundColor3 = COLORS.Accent
-homeButton.Text = "🏠"
-homeButton.TextColor3 = COLORS.Text
-homeButton.Font = Enum.Font.GothamBold
-homeButton.TextSize = 18
-homeButton.Visible = false
-homeButton.Parent = screenGui
-addUICorner(homeButton, 10)
+-- God Mode
+btnGod.MouseButton1Click:Connect(function()
+    godActive = not godActive
+end)
 
--- Перемещение homeButton
-homeButton.Active = true
-homeButton.Draggable = true
+-- ======= Main Loop =======
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
 
-homeButton.MouseButton1Click:Connect(function()
-    local hrp = getCharacter():FindFirstChild("HumanoidRootPart")
-    if hrp and states.homePosition then
-        local original = hrp.CFrame
-        hrp.CFrame = states.homePosition
-        wait(0.05)
-        hrp.CFrame = original
+    -- NoClip
+    if noclipActive or flyNoClipActive then
+        for _, part in pairs(char:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    else
+        for _, part in pairs(char:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+
+    -- Fly
+    if flyActive2 or flyNoClipActive then
+        local dir = Vector3.new()
+        if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + workspace.CurrentCamera.CFrame.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - workspace.CurrentCamera.CFrame.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - workspace.CurrentCamera.CFrame.RightVector end
+        if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + workspace.CurrentCamera.CFrame.RightVector end
+        hrp.Velocity = dir.Unit * flySpeed
+    end
+
+    -- God Mode
+    if godActive then
+        hum.Health = hum.MaxHealth
+    end
+end)
+
+-- Infinite Jump Handler
+UIS.JumpRequest:Connect(function()
+    if infJumpActive then
+        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
     end
 end)
