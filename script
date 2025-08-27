@@ -35,7 +35,7 @@ MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.Visible = false
+MainFrame.Visible = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0,16)
 Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(100,100,100)
 
