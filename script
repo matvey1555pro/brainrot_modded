@@ -128,11 +128,16 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- Toggle menu
+local function ToggleMenu()
+    MainFrame.Visible = not MainFrame.Visible
+end
+
 ToggleButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        MainFrame.Visible = not MainFrame.Visible
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        ToggleMenu()
     end
 end)
+
 
 -- ======= Functional Variables =======
 local homePos = nil
