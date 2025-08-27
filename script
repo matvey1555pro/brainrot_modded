@@ -1,4 +1,4 @@
--- Modern Menu + All Functions + God Mode
+-- Modern Menu Full Version (Mobile & PC Compatible)
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -35,7 +35,7 @@ MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.Visible = true
+MainFrame.Visible = true -- меню открыто сразу
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0,16)
 Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(100,100,100)
 
@@ -43,7 +43,7 @@ Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(100,100,100)
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1,0,0,40)
 Title.BackgroundTransparency = 1
-Title.Text = "🚀 kobabov hueta"
+Title.Text = "🚀 Modern Menu"
 Title.TextColor3 = Color3.fromRGB(220,220,220)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
@@ -112,10 +112,12 @@ SliderFill.Parent = SpeedSlider
 local flySpeed = 50
 local dragging = false
 SpeedSlider.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+    end
 end)
 SpeedSlider.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    dragging = false
 end)
 RunService.RenderStepped:Connect(function()
     if dragging then
@@ -131,13 +133,11 @@ end)
 local function ToggleMenu()
     MainFrame.Visible = not MainFrame.Visible
 end
-
 ToggleButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         ToggleMenu()
     end
 end)
-
 
 -- ======= Functional Variables =======
 local homePos = nil
@@ -173,17 +173,17 @@ btnFlyHome.MouseButton1Click:Connect(function()
     end
 end)
 
--- Fly
+-- Fly toggle
 btnFly.MouseButton1Click:Connect(function()
     flyActive2 = not flyActive2
 end)
 
--- NoClip
+-- NoClip toggle
 btnNoClip.MouseButton1Click:Connect(function()
     noclipActive = not noclipActive
 end)
 
--- Fly + NoClip
+-- Fly + NoClip toggle
 btnFlyNoClip.MouseButton1Click:Connect(function()
     flyNoClipActive = not flyNoClipActive
 end)
@@ -230,26 +230,22 @@ RunService.RenderStepped:Connect(function()
     -- NoClip
     if noclipActive or flyNoClipActive then
         for _, part in pairs(char:GetChildren()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
+            if part:IsA("BasePart") then part.CanCollide = false end
         end
     else
         for _, part in pairs(char:GetChildren()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = true
-            end
+            if part:IsA("BasePart") then part.CanCollide = true end
         end
     end
 
-    -- Fly
+    -- Fly (PC & Mobile)
     if flyActive2 or flyNoClipActive then
-        local dir = Vector3.new()
-        if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + workspace.CurrentCamera.CFrame.LookVector end
-        if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - workspace.CurrentCamera.CFrame.LookVector end
-        if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - workspace.CurrentCamera.CFrame.RightVector end
-        if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + workspace.CurrentCamera.CFrame.RightVector end
-        hrp.Velocity = dir.Unit * flySpeed
+        local dir = hum.MoveDirection
+        if dir.Magnitude > 0 then
+            hrp.Velocity = dir.Unit * flySpeed
+        else
+            hrp.Velocity = Vector3.new(0,0,0)
+        end
     end
 
     -- God Mode
@@ -258,7 +254,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Infinite Jump Handler
+-- Infinite Jump handler
 UIS.JumpRequest:Connect(function()
     if infJumpActive then
         local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
